@@ -1,0 +1,22 @@
+S3BUCKET=your-s3-bucket-for-artifact-builds
+PROFILE=-your-aws-cli-profile
+
+P_NAME=placeholder-no-need-to-update
+INFRA_STACK=plenoxels-infra
+INFRA_TEMPLATE=iac/infra.yaml
+INFRA_OUTPUT=iac/infra_output.yaml
+INFRA_PARAMS="ParameterKey=pName,ParameterValue=${P_NAME}"
+O_BUCKET=output-s3-bucket-name
+
+P_VPC_ID=your-vpc-id
+P_SUBNET_IDS=your-comma-separated-list-of-subnet-ids
+P_INGRESS_CIDR=your-allowed-cidr-range
+P_IMAGE_ID=ami-0e9d3c53b79c2cc6f
+P_INSTANCE_TYPE=g4dn.xlarge
+P_SUBNET_SELECTION=0
+P_SSH_KEY=your-ec2-ssh-key
+EC2_STACK=plenoxels-ec2
+EC2_TEMPLATE=iac/ec2.yaml
+EC2_OUTPUT=iac/ec2_output.yaml
+EC2_PARAMS="ParameterKey=pBucket,ParameterValue=${O_BUCKET} ParameterKey=pVpcId,ParameterValue=${P_VPC_ID} ParameterKey=pSubnetIds,ParameterValue=${P_SUBNET_IDS} ParameterKey=pSubnetSelection,ParameterValue=${P_SUBNET_SELECTION} ParameterKey=pIngressCidr,ParameterValue=${P_INGRESS_CIDR} ParameterKey=pImageId,ParameterValue=${P_IMAGE_ID} ParameterKey=pInstanceType,ParameterValue=${P_INSTANCE_TYPE} ParameterKey=pKey,ParameterValue=${P_SSH_KEY}"
+O_EC2=output-ec2-dns-name

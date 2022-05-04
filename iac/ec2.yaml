@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Instance for GPU testing with Plenoxels
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  pBucket:
+    Type: String
+  pVpcId:
+    Type: String
+  pSubnetIds:
+    Type: List<String>
+  pSubnetSelection:
+    Type: String
+  pIngressCidr:
+    Type: String
+  pImageId:
+    Type: String
+  pInstanceType:
+    Type: String
+  pKey:
+    Type: String
+Resources:
+  # Security Groups
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for instance
+      VpcId: !Ref pVpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref pIngressCidr
+  # Instance
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: '/service-role/'
+      Policies:
+        - PolicyName: cloudwatch-logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: 'arn:aws:logs:*:*:log-group:*:*'
+        - PolicyName: cloudformation
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:ListStacks
+                Resource: !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/*/*'
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub 'arn:aws:s3:::${pBucket}'
+                  - !Sub 'arn:aws:s3:::${pBucket}/*'
+
+  Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref Role
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 50
+            VolumeType: gp3
+        - DeviceName: /dev/sdc
+          VirtualName: ephemeral0
+      IamInstanceProfile: !Ref Profile
+      ImageId: !Ref pImageId
+      InstanceType: !Ref pInstanceType
+      KeyName: !Ref pKey
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref SecurityGroup
+          SubnetId: !Select [!Ref pSubnetSelection, !Ref pSubnetIds]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install jq -y
+
+          # setup filesystems
+          mkfs -t xfs /dev/nvme1n1
+          mkfs -t xfs /dev/nvme2n1
+          mkdir /data1
+          mkdir /data2
+          mount /dev/nvme1n1 /data1
+          mount /dev/nvme2n1 /data2
+
+          # setup anaconda
+          cd /data1
+          wget -q https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh
+          sh Anaconda3-2021.11-Linux-x86_64.sh -b -p /opt/anaconda3
+
+          # setup plenoxels environment variables
+          export PATH=$PATH:/opt/anaconda3/bin
+          export CUDA_HOME=/usr/local/cuda
+          export CUB_HOME=/opt/anaconda3/pkgs/nvidiacub-1.10.0-0
+
+          # setup plenoxels conda
+          conda install -c bottler nvidiacub -y
+
+          # init shell for conda
+          conda init bash
+          source /root/.bashrc
+
+          # setup plenoxels libraries
+          cd /data2
+          git clone https://github.com/sxyu/svox2.git
+          conda env create -f svox2/environment.yml --name plenoxels
+          conda activate plenoxels
+          cd svox2
+          pip install .
+
+          # download data
+          cd /data2
+          aws s3 cp s3://${pBucket}/nerf_synthetic.zip .
+          aws s3 cp s3://${pBucket}/nerf_llff_data.zip .
+          aws s3 cp s3://${pBucket}/TanksAndTempleBG.tar.gz .
+Outputs:
+  outInstancePublicDnsName:
+    Value: !GetAtt Instance.PublicDnsName
+  outInstancePublicIp:
+    Value: !GetAtt Instance.PublicIp
+  outSecurityGroup:
+    Value: !Ref SecurityGroup
