@@ -106,7 +106,7 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           yum update -y
-          yum install jq -y
+          yum install jq unzip -y
 
           # setup filesystems
           mkfs -t xfs /dev/nvme1n1
@@ -146,6 +146,13 @@ Resources:
           aws s3 cp s3://${pBucket}/nerf_synthetic.zip .
           aws s3 cp s3://${pBucket}/nerf_llff_data.zip .
           aws s3 cp s3://${pBucket}/TanksAndTempleBG.tar.gz .
+
+          # extract data
+          unzip nerf_synthetic.zip
+          unzip nerf_llff_data.zip
+          tar xvf TanksAndTempleBG.tar.gz
+          chmod 755 nerf_llff_data
+          rm -rf __MACOSX
 Outputs:
   outInstancePublicDnsName:
     Value: !GetAtt Instance.PublicDnsName
