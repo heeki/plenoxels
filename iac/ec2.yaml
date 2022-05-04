@@ -115,6 +115,8 @@ Resources:
           mkdir /data2
           mount /dev/nvme1n1 /data1
           mount /dev/nvme2n1 /data2
+          echo "/dev/nvme1n1 /data1 xfs defaults 0 0" >> /etc/fstab
+          echo "/dev/nvme2n1 /data2 xfs defaults 0 0" >> /etc/fstab
 
           # setup anaconda
           cd /data1
