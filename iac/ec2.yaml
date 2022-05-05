@@ -85,13 +85,12 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       BlockDeviceMappings:
-        - DeviceName: /dev/sda1
+        - DeviceName: /dev/xvda
           Ebs:
             DeleteOnTermination: true
-            VolumeSize: 50
+            Iops: 16000
+            VolumeSize: 200
             VolumeType: gp3
-        - DeviceName: /dev/sdc
-          VirtualName: ephemeral0
       IamInstanceProfile: !Ref Profile
       ImageId: !Ref pImageId
       InstanceType: !Ref pInstanceType
@@ -108,18 +107,11 @@ Resources:
           yum update -y
           yum install jq unzip -y
 
-          # setup filesystems
-          mkfs -t xfs /dev/nvme1n1
-          mkfs -t xfs /dev/nvme2n1
-          mkdir /data1
-          mkdir /data2
-          mount /dev/nvme1n1 /data1
-          mount /dev/nvme2n1 /data2
-          echo "/dev/nvme1n1 /data1 xfs defaults 0 0" >> /etc/fstab
-          echo "/dev/nvme2n1 /data2 xfs defaults 0 0" >> /etc/fstab
+          # setup filesystem
+          mkdir /data
 
           # setup anaconda
-          cd /data1
+          cd /data
           wget -q https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh
           sh Anaconda3-2021.11-Linux-x86_64.sh -b -p /opt/anaconda3
 
@@ -136,7 +128,7 @@ Resources:
           source /root/.bashrc
 
           # setup plenoxels libraries
-          cd /data2
+          cd /data
           git clone https://github.com/sxyu/svox2.git
           conda env create -f svox2/environment.yml --name plenoxels
           conda activate plenoxels
@@ -144,15 +136,15 @@ Resources:
           pip install .
 
           # download data
-          cd /data2
+          cd /data
           aws s3 cp s3://${pBucket}/nerf_synthetic.zip .
           aws s3 cp s3://${pBucket}/nerf_llff_data.zip .
           aws s3 cp s3://${pBucket}/TanksAndTempleBG.tar.gz .
 
           # extract data
-          unzip nerf_synthetic.zip
-          unzip nerf_llff_data.zip
-          tar xvf TanksAndTempleBG.tar.gz
+          unzip -q nerf_synthetic.zip
+          unzip -q nerf_llff_data.zip
+          tar xf TanksAndTempleBG.tar.gz
           chmod 755 nerf_llff_data
           rm -rf __MACOSX
 Outputs:
