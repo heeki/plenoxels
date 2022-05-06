@@ -5,6 +5,16 @@ Resources:
   # S3
   Bucket:
     Type: AWS::S3::Bucket
+  # SQS
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 10800
+      VisibilityTimeout: 3600
 Outputs:
   outBucket:
     Value: !Ref Bucket
+  outQueueUrl:
+    Value: !Ref Queue
+  outQueueArn:
+    Value: !GetAtt Queue.Arn

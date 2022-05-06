@@ -1,0 +1,41 @@
+openapi: 3.0.0
+info:
+  title: plenoxels
+  description: API Gateway for handling job submissions with Plenoxels
+  version: 0.1.0
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+paths:
+  /:
+    get:
+      summary: jobs
+      description: returns list of job status
+      responses:
+        200:
+          description: ok
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        payloadFormatVersion: "1.0"
+        responses:
+          default:
+            statusCode: 200
+        type: aws_proxy
+        uri:
+          Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Fn.Arn}/invocations'
+    post:
+      summary: job
+      description: submit job
+      responses:
+        200:
+          description: ok
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        payloadFormatVersion: "1.0"
+        responses:
+          default:
+            statusCode: 200
+        type: aws_proxy
+        uri:
+          Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Fn.Arn}/invocations'

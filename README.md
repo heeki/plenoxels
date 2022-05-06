@@ -21,6 +21,8 @@ The following are configuration parameters for deploying supporting infrastructu
 * `INFRA_OUTPUT`: Path to the SAM output template, leave this as is.
 * `INFRA_PARAMS`: Parameters for the CloudFormation stack, leave this as is.
 * `O_BUCKET`: The name of the S3 bucket, output from the CloudFormation stack deployment.
+* `O_QUEUE_URL`: The URL of the SQS queue, output from the CloudFormation stack deployment.
+* `O_QUEUE_ARN`: The ARN of the SQS queue, output from the CloudFormation stack deployment.
 
 To deploy the infrastructure stack, run `make infra`.
 
@@ -32,7 +34,7 @@ The following are configuration parameters for deploying the EC2 infrastructure.
 * `P_IMAGE_ID`: Deep Learning AMI for GPU CUDA 11.4.3 on Amazon Linux 2, leave as is
 * `P_INSTANCE_TYPE`: GPU instance type, leave as is
 * `P_SUBNET_SELECTION`: Index to select within the subnet id list
-* `P_SSH_KEY`: Name of the EC2 SSH key
+* `P_SSH_KEY`: The name of the EC2 SSH key
 * `EC2_STACK`: The name of the CloudFormation stack
 * `EC2_TEMPLATE`: Path to the CloudFormation template, leave this as is.
 * `EC2_OUTPUT`: Path to the SAM output template, leave this as is.
@@ -40,3 +42,11 @@ The following are configuration parameters for deploying the EC2 infrastructure.
 * `O_EC2`: The FQDN of the EC2 instance, output from the CloudFormation stack deployment.
 
 To deploy the infrastructure stack, run `make ec2`.
+
+The following are configuration parameters for deploying the EC2 infrastructure.
+
+* `P_API_STAGE`: The API stage name for the deployment.
+* `P_FN_MEMORY`: The amount of memory to allocate to the Lambda function.
+* `P_FN_TIMEOUT`: The timeout (in seconds) for the Lambda function.
+
+To deploy the api stack, run `make apigw`.
