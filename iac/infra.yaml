@@ -11,6 +11,17 @@ Resources:
     Properties:
       MessageRetentionPeriod: 10800
       VisibilityTimeout: 3600
+  # DynamoDB
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: job_id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: job_id
+          KeyType: HASH
 Outputs:
   outBucket:
     Value: !Ref Bucket
@@ -18,3 +29,5 @@ Outputs:
     Value: !Ref Queue
   outQueueArn:
     Value: !GetAtt Queue.Arn
+  outTable:
+    Value: !Ref Table

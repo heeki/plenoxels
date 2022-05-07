@@ -1,5 +1,6 @@
 # directories
 .vscode
+src/lib/__pycache__
 tmp
 var
 

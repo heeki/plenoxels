@@ -50,3 +50,12 @@ The following are configuration parameters for deploying the EC2 infrastructure.
 * `P_FN_TIMEOUT`: The timeout (in seconds) for the Lambda function.
 
 To deploy the api stack, run `make apigw`.
+
+## Running the Job Executor
+The job executor depends on two environment variables for reading from SQS and writing outputs to DynamoDB.
+
+```bash
+export QUEUE_URL=your-https-queue-url
+export TABLE=your-dynamodb-table-name
+python src/executor.py
+```
