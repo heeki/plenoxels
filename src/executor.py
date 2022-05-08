@@ -55,45 +55,52 @@ def run_job_training(message):
 def run_job_validation(message):
     validation_command = message["body"]["command"]
     print("validation command {}".format(validation_command))
-    process = subprocess.Popen(validation_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
+    ckpt_file = validation_command[2]
+    if not os.path.exists(ckpt_file):
+        response = {
+            "error": "ckpt file not found"
+        }
+        print(json.dumps(response))
+    else:
+        process = subprocess.Popen(validation_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        stdout = stdout.decode("utf-8")
+        stderr = stderr.decode("utf-8")
 
-    result = {}
-    is_final = False
-    for line in stdout.splitlines():
-        # print(line)
-        if line == "AVERAGES":
-            is_final = True
-            continue
-        if is_final:
-            print(line)
-            fields = line.split(":")
-            result[fields[0].lower()] = fields[1]
-    print(json.dumps(result))
+        result = {}
+        is_final = False
+        for line in stdout.splitlines():
+            # print(line)
+            if line == "AVERAGES":
+                is_final = True
+                continue
+            if is_final:
+                print(line)
+                fields = line.split(":")
+                result[fields[0].lower()] = fields[1]
+        print(json.dumps(result))
 
-    # psnr = peak signal to noise ratio
-    # ssim = structural similarity index measure
-    # lpips = learned perceptual image patch similarity
-    item_key = {
-        "job_id": {"S": message["message_id"]}
-    }
-    update_expression = "SET #psnr=:psnr, #ssim=:ssim, #lpips=:lpips"
-    expression_names = {
-        "#psnr": "psnr",
-        "#ssim": "ssim",
-        "#lpips": "lpips"
-    }
-    expression_attributes = {
-        ":psnr": {"S": result["psnr"]},
-        ":ssim": {"S": result["ssim"]},
-        ":lpips": {"S": result["lpips"]}
-    }
-    response = ddb.update(item_key, update_expression, expression_names, expression_attributes)
+        # psnr = peak signal to noise ratio
+        # ssim = structural similarity index measure
+        # lpips = learned perceptual image patch similarity
+        item_key = {
+            "job_id": {"S": message["message_id"]}
+        }
+        update_expression = "SET #psnr=:psnr, #ssim=:ssim, #lpips=:lpips"
+        expression_names = {
+            "#psnr": "psnr",
+            "#ssim": "ssim",
+            "#lpips": "lpips"
+        }
+        expression_attributes = {
+            ":psnr": {"S": result["psnr"]},
+            ":ssim": {"S": result["ssim"]},
+            ":lpips": {"S": result["lpips"]}
+        }
+        response = ddb.update(item_key, update_expression, expression_names, expression_attributes)
 
-    print("successfully processed message id: {}".format(message["message_id"]))
-    sqs.delete_message(message["receipt_handle"])
+        print("successfully processed message id: {}".format(message["message_id"]))
+        sqs.delete_message(message["receipt_handle"])
 
     return response
 
