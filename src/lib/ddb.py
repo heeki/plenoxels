@@ -1,5 +1,6 @@
 import boto3
 import botocore
+import json
 
 class AdptDynamoDB:
     def __init__(self, session, table, lsi=None):
@@ -35,6 +36,26 @@ class AdptDynamoDB:
                 "error": e
             }
         return response["ResponseMetadata"]["HTTPStatusCode"]
+
+    def update(self, item_key, update_expression, expression_names, expression_attributes):
+        try:
+            response = self.client.update_item(
+                TableName=self.table,
+                Key=item_key,
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=expression_names,
+                ExpressionAttributeValues=expression_attributes,
+                ReturnValues="ALL_NEW"
+            )
+        except botocore.exceptions.ClientError as e:
+            response = {
+                "ResponseMetadata": {
+                    "HTTPStatusCode": 400
+                },
+                "error": e
+            }
+            print(e)
+        return response
 
     def increment(self, hkey, attr, incr=1):
         try:

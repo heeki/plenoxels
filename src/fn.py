@@ -1,13 +1,15 @@
 import boto3
 import json
 import os
+from lib.ddb import AdptDynamoDB
 from lib.sqs import AdptSQS
 
 # initialization
 session = boto3.session.Session()
-client = session.client('sqs')
 queue_url = os.environ["QUEUE_URL"]
+table_name = os.environ["TABLE"]
 sqs = AdptSQS(session, queue_url)
+ddb = AdptDynamoDB(session, table_name)
 
 # helper functions
 def build_response(code, body):
@@ -27,12 +29,24 @@ def build_response(code, body):
     return response
 
 def handler(event, context):
+    print(json.dumps(event))
     method = event["httpMethod"]
     body = json.loads(event["body"])
-    output = body
+    output = {
+        "command": body["command"],
+        "config": body["config"]
+    }
+    print(json.dumps(output))
     if method == "GET":
         pass
     elif method == "POST":
-        sqs.send_message(json.dumps(output))
+        response = sqs.send_message(json.dumps(output))
+        output["job_id"] = response["MessageId"]
+        payload = {
+            "job_id": {"S": response["MessageId"]},
+            "command": {"S": json.dumps(output["command"])},
+            "config": {"S": json.dumps(output["config"])}
+        }
+        ddb.put(payload)
     response = build_response(200, json.dumps(output))
     return response

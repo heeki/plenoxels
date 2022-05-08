@@ -18,6 +18,10 @@ Parameters:
     Type: String
   pKey:
     Type: String
+  pQueueArn:
+    Type: String
+  pTableArn:
+    Type: String
 Resources:
   # Security Groups
   SecurityGroup:
@@ -74,7 +78,22 @@ Resources:
                 Resource:
                   - !Sub 'arn:aws:s3:::${pBucket}'
                   - !Sub 'arn:aws:s3:::${pBucket}/*'
-
+        - PolicyName: sqs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: !Ref pQueueArn
+        - PolicyName: dynamodb
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource: !Ref pTableArn
   Profile:
     Type: AWS::IAM::InstanceProfile
     Properties:

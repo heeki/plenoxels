@@ -18,27 +18,52 @@ ddb = AdptDynamoDB(session, table)
 # job runner
 def run_job(message):
     print("processing {}".format(message["message_id"]))
-    param_ckpt = "ckpt/test_synthetic_lego/ckpt.npz"
-    param_data = "/data/nerf_synthetic/lego"
-    command = ["python", "render_imgs.py", param_ckpt, param_data]
-    # process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # stdout, stderr = process.commumnicate()
-    # print(stdout)
-    # print(stderr)
+    command = message["body"]["command"]
+    print("executing command {}".format(command))
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    stdout = stdout.decode("utf-8")
+    stderr = stderr.decode("utf-8")
 
-    # psnr = peak signal to noise ratio
-    # ssim = structural similarity index measure 
-    # lpips = learned perceptual image patch similarity
-    response = {
-        "job_id": {"S": message["message_id"]},
-        "psnr": {"S": str(34.10292461075813)},
-        "ssim": {"S": str(0.9748960593342781)},
-        "lpips": {"S": str(0.02839263891801238)}
-    }
-    ddb.put(response)
-    if "psnr" in response:
-        print("successfully processed message id: {}".format(message["message_id"]))
-        sqs.delete_message(message["receipt_handle"])
+    # handle voxel training
+    if command[0] == "/data/svox2/opt/launch.sh":
+        pass
+
+    # handle validation
+    elif command[1] == "/data/svox2/opt/render_imgs.py":
+        result = {}
+        is_final = False
+        for line in stdout.splitlines():
+            # print(line)
+            if line == "AVERAGES":
+                is_final = True
+                continue
+            if is_final:
+                fields = line.split(":")
+                result[fields[0].lower()] = fields[1]
+        print(json.dumps(result))
+
+        # psnr = peak signal to noise ratio
+        # ssim = structural similarity index measure
+        # lpips = learned perceptual image patch similarity
+        item_key = {
+            "job_id": {"S": message["message_id"]}
+        }
+        update_expression = "SET #psnr=:psnr, #ssim=:ssim, #lpips=:lpips"
+        expression_names = {
+            "#psnr": "psnr",
+            "#ssim": "ssim",
+            "#lpips": "lpips"
+        }
+        expression_attributes = {
+            ":psnr": {"S": result["psnr"]},
+            ":ssim": {"S": result["ssim"]},
+            ":lpips": {"S": result["lpips"]}
+        }
+        response = ddb.update(item_key, update_expression, expression_names, expression_attributes)
+
+    print("successfully processed message id: {}".format(message["message_id"]))
+    sqs.delete_message(message["receipt_handle"])
 
     return response
 
@@ -54,7 +79,6 @@ def main():
                 with open("var/{}.json".format(message["message_id"]), "w") as o:
                     json.dump(message["body"], o)
                 run_job(message)
-
     except KeyboardInterrupt:
         print("exiting on interrupt")
 
