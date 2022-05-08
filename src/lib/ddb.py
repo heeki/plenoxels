@@ -145,3 +145,9 @@ class AdptDynamoDB:
             }
         )
         return response
+
+    def scan(self):
+        response = self.client.scan(
+            TableName=self.table
+        )
+        return response["Items"]

@@ -29,17 +29,20 @@ def build_response(code, body):
     return response
 
 def handler(event, context):
-    print(json.dumps(event))
+    # print(json.dumps(event))
     method = event["httpMethod"]
-    body = json.loads(event["body"])
-    output = {
-        "command": body["command"],
-        "config": body["config"]
-    }
-    print(json.dumps(output))
     if method == "GET":
-        pass
+        scanned = ddb.scan()
+        output = []
+        for record in scanned:
+            cleaned = {k:record[k]["S"] for k in record.keys()}
+            output.append(cleaned)
     elif method == "POST":
+        body = json.loads(event["body"])
+        output = {
+            "command": body["command"],
+            "config": body["config"]
+        }
         response = sqs.send_message(json.dumps(output))
         output["job_id"] = response["MessageId"]
         payload = {
