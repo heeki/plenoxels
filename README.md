@@ -23,6 +23,7 @@ The following are configuration parameters for deploying supporting infrastructu
 * `O_BUCKET`: The name of the S3 bucket, output from the CloudFormation stack deployment.
 * `O_QUEUE_URL`: The URL of the SQS queue, output from the CloudFormation stack deployment.
 * `O_QUEUE_ARN`: The ARN of the SQS queue, output from the CloudFormation stack deployment.
+* `O_TABLE_ARN`: The ARN of the DynamoDB table, output from the CloudFormation stack deployment.
 
 To deploy the infrastructure stack, run `make infra`.
 
@@ -55,6 +56,7 @@ To deploy the api stack, run `make apigw`.
 The job executor depends on two environment variables for reading from SQS and writing outputs to DynamoDB.
 
 ```bash
+export REGION=us-east-2
 export QUEUE_URL=your-https-queue-url
 export TABLE=your-dynamodb-table-name
 python src/executor.py

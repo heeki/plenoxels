@@ -32,28 +32,30 @@ def run_job(message):
 
 def run_job_training(message):
     training_command = message["body"]["command"]
-    print("executing command {}".format(training_command))
+    print("training command {}".format(training_command))
     process = subprocess.Popen(training_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
 
+    for line in stdout.splitlines():
+        print(line)
     experiment = training_command[1]
     data_dir = training_command[3]
     validation_command = [
         "python",
         "/data/svox2/opt/render_imgs.py",
-        "/data/svox2/opt/ckpt/${}/ckpt.npz".format(experiment),
+        "/data/svox2/opt/ckpt/{}/ckpt.npz".format(experiment),
         data_dir
     ]
-    message["command"] = validation_command
+    message["body"]["command"] = validation_command
     response = run_job_validation(message)
     return response
 
 def run_job_validation(message):
-    command = message["body"]["command"]
-    print("executing command {}".format(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    validation_command = message["body"]["command"]
+    print("validation command {}".format(validation_command))
+    process = subprocess.Popen(validation_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     stdout = stdout.decode("utf-8")
     stderr = stderr.decode("utf-8")
@@ -66,6 +68,7 @@ def run_job_validation(message):
             is_final = True
             continue
         if is_final:
+            print(line)
             fields = line.split(":")
             result[fields[0].lower()] = fields[1]
     print(json.dumps(result))
