@@ -44,7 +44,7 @@ The following are configuration parameters for deploying the EC2 infrastructure.
 
 To deploy the infrastructure stack, run `make ec2`.
 
-The following are configuration parameters for deploying the EC2 infrastructure.
+The following are configuration parameters for deploying the API infrastructure.
 
 * `P_API_STAGE`: The API stage name for the deployment.
 * `P_FN_MEMORY`: The amount of memory to allocate to the Lambda function.
@@ -52,12 +52,54 @@ The following are configuration parameters for deploying the EC2 infrastructure.
 
 To deploy the api stack, run `make apigw`.
 
+## Setting up the Job Executor
+The job executor setup is not yet automated (WIP). To set it up on the EC2 instances, clone this repository and perform the following steps.
+
+```bash
+cp src/launch_auto.sh /data/svox2/opt
+```
+
 ## Running the Job Executor
 The job executor depends on two environment variables for reading from SQS and writing outputs to DynamoDB.
 
 ```bash
-export REGION=us-east-2
-export QUEUE_URL=your-https-queue-url
+export REGION=your-region, e.g. us-east-2
+export QUEUE_URL=your-https-queue-url, e.g. https://sqs.[your-region].amazonaws.com/[your-account-id]/[your-queue-name]
 export TABLE=your-dynamodb-table-name
 python src/executor.py
+```
+
+## Submitting a Job
+Jobs are submitted via API infrastructure. The job submissions can be executed as follows:
+
+```bash
+curl -s -XPOST -d @etc/job_training_drums.json https://[your-api-id].execute-api.[your-region].amazonaws.com/dev/ | jq
+```
+
+where @etc/job_training_drums.json takes the following form. Additional examples of job submission files are included in the etc directory.
+
+```json
+{
+    "command": [
+        "/data/svox2/opt/launch_auto.sh",
+        "test_synthetic_drums",
+        "00:1e.0",
+        "/data/nerf_synthetic/drums",
+        "-c"
+    ],
+    "config": {
+        "reso": "[[256, 256, 256], [512, 512, 512]]",
+        "upsamp_every": 38400,
+        "lr_sigma": 3e1,
+        "lr_sh": 1e-2,
+        "lambda_tv": 1e-5,
+        "lambda_tv_sh": 1e-3
+    }
+}
+```
+
+Jobs are queried via API infrastructure. That query can be executed as follows:
+
+```bash
+curl -s -XGET https://[your-api-id].execute-api.[your-region].amazonaws.com/dev/ | jq
 ```

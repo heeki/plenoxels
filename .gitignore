@@ -6,6 +6,7 @@ var
 
 # files
 etc/*.sh
-etc/*.json
+etc/envvars.json
+etc/event.json
 iac/*_output.yaml
 notes.md
