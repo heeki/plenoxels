@@ -60,7 +60,7 @@ def run_job_validation(message):
         response = {
             "error": "ckpt file not found"
         }
-        print(json.dumps(response))
+        print("failed to process message id: {} (reason: ckpt not found)".format(message["message_id"]))
     else:
         process = subprocess.Popen(validation_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
@@ -98,9 +98,9 @@ def run_job_validation(message):
             ":lpips": {"S": result["lpips"]}
         }
         response = ddb.update(item_key, update_expression, expression_names, expression_attributes)
-
         print("successfully processed message id: {}".format(message["message_id"]))
-        sqs.delete_message(message["receipt_handle"])
+
+    sqs.delete_message(message["receipt_handle"])
 
     return response
 
