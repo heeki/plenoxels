@@ -1,0 +1,17 @@
+{
+    "command": [
+        "/data/svox2/opt/launch_auto.sh",
+        "test_quad_synthetic",
+        "00:1e.0",
+        "/data/eng_quad",
+        "-c"
+    ],
+    "config": {
+        "reso": "[[256, 256, 256], [512, 512, 512]]",
+        "upsamp_every": 38400,
+        "lr_sigma": 3e1,
+        "lr_sh": 1e-2,
+        "lambda_tv": 1e-5,
+        "lambda_tv_sh": 1e-3
+    }
+}
